@@ -504,7 +504,6 @@
       const bgUrl = getLoginBgUrl();
       const bgStyle = bgUrl ? `background-image: url('${bgUrl}'); background-size: cover; background-position: center;` : '';
 
-      // 📌 นำฟิลเตอร์เบลอและหน้ากากมืดสีเทาออกจากพื้นหลัง เพื่อความคมชัด 100% ตามต้นฉบับรูปภาพ
       app.innerHTML = `
       <div class="min-h-full w-full flex flex-col items-center justify-center p-4 relative ${bgUrl ? '' : 'bg-theme-gradient'}" style="${bgStyle}">
         <div class="w-full max-w-sm relative z-10 py-4">
@@ -513,7 +512,6 @@
               ${getLogoHtml()}
             </div>
           </div>
-          <!-- ปรับระดับความทึบของตัวการ์ดเพื่อความสะดวกและสมดุลในการอ่านข้อความอย่างปลอดภัย -->
           <div id="form-card" class="bg-slate-950/85 rounded-[32px] p-6 shadow-2xl border border-white/10 transition-all duration-300">
             <div id="form-content"></div>
           </div>
@@ -1335,7 +1333,8 @@
     function renderAdminUsers(c) {
       c.innerHTML = `
         <div class="mb-5 relative">
-          <input id="admin-user-search" type="text" oninput="adminUserSearch = this.value; renderAdminTab();" value="${adminUserSearch}" class="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-base placeholder-slate-400 outline-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm" placeholder="ค้นหาด้วยชื่อผู้ใช้ หรือ เบอร์โทรศัพท์...">
+          <!-- 📌 อัปเกรดมาตรฐานการควบคุมช่องกรอกข้อมูลค้นหาผู้ใช้เพื่อแก้ปัญหาตัวแปรติดขัดจาก Module Scope -->
+          <input id="admin-user-search" type="text" oninput="handleAdminUserSearch(this.value)" value="${adminUserSearch}" class="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-base placeholder-slate-400 outline-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm" placeholder="ค้นหาด้วยชื่อผู้ใช้ หรือ เบอร์โทรศัพท์...">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><i data-lucide="search" class="w-5 h-5"></i></div>
         </div>
         <div id="user-list-container">
@@ -1466,9 +1465,11 @@
       const allProds = getProducts().filter(p => String(p.vipLevel) === String(adminProductTab));
       const products = allProds.slice((adminProductPage - 1) * ITEMS_PER_PAGE, adminProductPage * ITEMS_PER_PAGE);
       const tabs = [{id:'1', label:'VIP 1'}, {id:'2', label:'VIP 2'}, {id:'3', label:'VIP 3'}, {id:'4', label:'VIP 4'}, {id:'5', label:'VIP 5'}, {id:'fixturn', label:'ซ่อมเทิร์น'}, {id:'allowwd', label:'ปล่อยถอน'}];
+      
+      // 📌 อัปเกรดความเข้ากันได้ของการคลิกปุ่มสลับแท็บสินค้าในแผงแอดมิน เพื่อแก้ปัญหาตัวแปรติดขัดจาก Module Scope
       c.innerHTML = `
         <div class="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-none">
-          ${tabs.map(t => `<button onclick="adminProductTab='${t.id}'; adminProductPage=1; renderAdminTab();" class="px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap transition ${adminProductTab == t.id ? 'bg-blue-600 text-white shadow' : 'bg-slate-800 text-slate-400 border border-slate-700'}">${t.label}</button>`).join('')}
+          ${tabs.map(t => `<button onclick="switchAdminProductTab('${t.id}')" class="px-4 py-2 rounded-xl font-bold text-xs whitespace-nowrap transition ${adminProductTab == t.id ? 'bg-blue-600 text-white shadow' : 'bg-slate-800 text-slate-400 border border-slate-700'}">${t.label}</button>`).join('')}
         </div>
         <button onclick="showAddProduct()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition">+ เพิ่มสินค้าในหมวดหมู่นี้</button>
         <div class="space-y-3 pt-2">
@@ -1582,6 +1583,19 @@
         .map(u => `<option value="${u.id}">${u.username} (${u.phone})</option>`)
         .join('');
     }
+
+    // ฟังก์ชันจัดการแท็บและหน้าสินค้าผ่าน Window Scope
+    window.switchAdminProductTab = function(tabId) {
+      adminProductTab = tabId;
+      adminProductPage = 1;
+      renderAdminTab();
+    };
+
+    // ฟังก์ชันค้นหายูสเซอร์ผ่าน Window Scope
+    window.handleAdminUserSearch = function(value) {
+      adminUserSearch = value;
+      renderAdminTab();
+    };
 
     function doAssignSWithEdit(imgUrl) {
       const name = $('sa-name').value.trim();
