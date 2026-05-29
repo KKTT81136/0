@@ -135,17 +135,16 @@
     .custom-bg { 
       background-size: cover; 
       background-position: center; 
-      background-attachment: fixed; 
       background-repeat: no-repeat;
     }
   </style>
  </head>
  <body class="h-full text-slate-800 antialiased selection:bg-blue-200">
 
-  <!-- 📌 ปรับปรุงหน้าดาวน์โหลดระบบเพื่อความสวยงามและแสดงภาพโลโก้โดยปราศจากข้อความ -->
+  <!-- 📌 หน้าต่างควบคุมการดาวน์โหลดระบบเพื่อความสวยงามและแสดงภาพโลโก้โดยปราศจากข้อความ -->
   <div id="initial-loader" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center transition-opacity duration-300">
     <div id="loader-logo-container" class="w-28 h-28 rounded-full overflow-hidden flex items-center justify-center bg-slate-50 border border-slate-100 p-0 shadow-sm">
-      <!-- รูปภาพโลโก้จะดึงจากแคชหรือแสดงผลเริ่มต้นโดยอัตโนมัติผ่าน JavaScript -->
+      <!-- รูปภาพโลโก้จะดาวน์โหลดจากแคชหรือแสดงผลเริ่มต้นผ่าน JavaScript -->
     </div>
   </div>
   
@@ -153,45 +152,44 @@
 
   <script>
 // ==========================================
-// 1. Initial Logo Pre-loader Setup
+// 1. Initial Logo Pre-loader Setup (แก้ไข Race Condition เพื่อการโหลดรูปภาพที่ถูกต้องเสถียร)
 // ==========================================
 (function() {
-  try {
-    const localCached = localStorage.getItem('tos_cache_db');
-    if (localCached) {
-      const parsed = JSON.parse(localCached);
-      const configs = parsed['configs'] || [];
-      const cfg = configs.find(d => d.type === 'config');
-      if (cfg && cfg.logoUrl) {
-        document.addEventListener("DOMContentLoaded", function() {
-          const container = document.getElementById('loader-logo-container');
-          if (container) {
+  function loadPreloaderLogo() {
+    try {
+      const localCached = localStorage.getItem('tos_cache_db');
+      if (localCached) {
+        const parsed = JSON.parse(localCached);
+        const configs = parsed['configs'] || [];
+        const cfg = configs.find(d => d.type === 'config');
+        const container = document.getElementById('loader-logo-container');
+        if (container) {
+          if (cfg && cfg.logoUrl) {
             container.innerHTML = `<img src="${cfg.logoUrl}" class="w-full h-full object-cover rounded-full">`;
+          } else {
+            container.innerHTML = `<span class="text-5xl">🛒</span>`;
           }
-        });
+        }
       } else {
-        setDefaultLoaderIcon();
+        const container = document.getElementById('loader-logo-container');
+        if (container) container.innerHTML = `<span class="text-5xl">🛒</span>`;
       }
-    } else {
-      setDefaultLoaderIcon();
-    }
-  } catch (e) {
-    setDefaultLoaderIcon();
-  }
-  function setDefaultLoaderIcon() {
-    document.addEventListener("DOMContentLoaded", function() {
+    } catch (e) {
       const container = document.getElementById('loader-logo-container');
-      if (container) {
-        container.innerHTML = `<span class="text-5xl">🛒</span>`;
-      }
-    });
+      if (container) container.innerHTML = `<span class="text-5xl">🛒</span>`;
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadPreloaderLogo);
+  } else {
+    loadPreloaderLogo();
   }
 })();
 
 // ==========================================
 // 2. Firebase Config (Obfuscated for Security)
 // ==========================================
-// ป้องกันความปลอดภัยของข้อมูลโดยการย่อยค่าเชื่อมต่อแบบไดนามิก
 const _0xfb8 = [
   "QUl6YVN5QkpJVURtQlVib1pvRFYzd1VaMXRjYTF2dGthQXdqcHVN",
   "d2Vid2ZoLTNlY2ViLmZpcmViYXNlYXBwLmNvbQ==",
@@ -238,7 +236,6 @@ function applyTheme(primary, secondary) {
   document.documentElement.style.setProperty('--color-secondary', secondary || '#4f46e5');
 }
 
-// อัปเดตข้อมูลแท็บเบราว์เซอร์สดตามการตั้งค่าหลังบ้าน
 function updateBrowserTab() {
   document.title = getTabTitle();
   const favUrl = getTabFavicon();
@@ -253,14 +250,12 @@ function updateBrowserTab() {
   }
 }
 
-// พยายามดึงข้อมูลแคชเดิมทันทีก่อนเชื่อมฐานข้อมูลจริงเพื่อแก้ปัญหารีเฟรชแล้วข้อมูลว่างเปล่า และป้องกันสีธีมสะบัดกลับ
 try {
   const localCached = localStorage.getItem('tos_cache_db');
   if (localCached) {
     cacheDB = JSON.parse(localCached);
     allData = Object.values(cacheDB).flat();
     
-    // บังคับใช้สีธีมจากแคชทันทีระหว่างโหลดฐานข้อมูลสด
     const cachedCfg = allData.find(d => d.type === 'config');
     if (cachedCfg) {
       applyTheme(cachedCfg.themePrimary, cachedCfg.themeSecondary);
@@ -301,7 +296,6 @@ const getTabFavicon = () => { const c = getConfig(); return c && c.tabFaviconUrl
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 
-// 🔔 ป๊อบอัพแจ้งเตือนด่วน (Toast) แบบแบนราบ ไม่มีเอฟเฟกต์เงาสะท้อน ตัวหนังสือคมชัดอ่านง่าย
 function showToast(msg, type='success') {
   const old = $('toast-container'); if (old) old.remove();
   const colors = { 
@@ -323,7 +317,6 @@ function showToast(msg, type='success') {
   setTimeout(() => { if(div) div.remove(); }, 2500);
 }
 
-// 🔲 หน้าต่างป๊อบอัพ (Modal) แบบแบนราบ พื้นหลังสีมืดกลบแสงสะท้อน ไม่มีเอฟเฟกต์เบลอ
 function showModal(content) {
   let m = $('modal-overlay');
   if (!m) { 
@@ -683,7 +676,7 @@ function renderDashboard() {
   const uBgUrl = getUserBgUrl();
   const bgStyle = uBgUrl ? `background-image: url('${uBgUrl}');` : '';
 
-  // 📌 ปรับปรุงโครงสร้างสไตล์และการแสดงผลภาพพื้นหลังผู้ใช้อย่างชัดเจนและปราศจากความเบลอ
+  // 📌 ปรับปรุงโครงสร้างสไตล์และการแสดงผลภาพพื้นหลังผู้ใช้งาน เพื่อไม่ให้เกิดรอยเบลอ
   $('app').innerHTML = `
   <div class="h-full flex flex-col ${uBgUrl ? 'custom-bg' : 'bg-slate-50'}" style="${bgStyle}">
     <div id="dash-content" class="flex-1 overflow-auto pb-24 fade-in" style="background-color: transparent;"></div>
@@ -826,7 +819,6 @@ function renderProducts(c) {
   if(userLevel === 'fixturn') levelText = 'ซ่อมเทิร์น'; 
   if(userLevel === 'allowwd') levelText = 'ปล่อยถอน';
 
-  // กำหนดโครงสร้าง HTML ของระดับชั้น โดยจะไม่แสดงป้ายชื่อหากผู้ใช้งานอยู่ในกลุ่ม "ปล่อยถอน" (allowwd)
   const levelSubtextHtml = (userLevel === 'allowwd') 
     ? '' 
     : `<p class="text-center text-white/80 mt-1 font-medium text-sm">(${levelText})</p>`;
@@ -919,13 +911,13 @@ function processOrderFlowStep1(p, isSpecial, btnElement) {
           <p class="text-xs text-slate-400 font-semibold mb-0.5">ราคาสินค้า</p>
           <p class="font-black text-theme text-xl">฿${(p.productPrice||0).toLocaleString()}</p>
         </div>
-        <!-- ⏱️ เพิ่มดีเลย์การตอบสนองของการชำระสินค้าให้มีความนุ่มนวลและเป็นธรรมชาติยิ่งขึ้นเป็นเวลา 1.5 วินาที -->
+        <!-- ⏱️ ปุ่มสั่งซื้อสินค้าพร้อมระบบดีเลย์หน่วง 1.5 วินาทีเพื่อความเสถียรและเสมือนจริง -->
         <button id="btn-buy-step1" onclick="triggerStep1Delay('${p.__backendId}', ${isSpecial || p.isSpecial || false})" class="mt-5 w-full py-3.5 bg-slate-900 text-white font-bold rounded-2xl shadow-md hover:bg-black transition duration-200 text-base">สั่งซื้อสินค้า</button>
       </div>`);
   }, 3500); 
 }
 
-// ฟังก์ชันควบคุมการหน่วงเวลา 1.5 วินาทีเมื่อผู้ใช้คลิกสั่งซื้อสินค้า
+// ควบคุมการหน่วงเวลา 1.5 วินาทีเมื่อคลิกสั่งซื้อสินค้า
 window.triggerStep1Delay = function(pId, isSpecial) {
   const btn = $('btn-buy-step1');
   if (!btn) return;
@@ -1125,7 +1117,6 @@ function renderProfile(c) {
   if ($('profile-container')) { if ($('prof-credit-display')) $('prof-credit-display').innerText = '฿' + (u.credit||0).toLocaleString(); return; }
   const logoUrl = getLogoUrl(); let levelText = 'VIP ' + (u.userLevel||1); if(u.userLevel === 'fixturn') levelText = 'ซ่อมเทิร์น'; if(u.userLevel === 'allowwd') levelText = 'ปล่อยถอน';
 
-  // กำหนดโครงสร้าง HTML ของป้ายระดับชั้นในหน้าโปรไฟล์ โดยซ่อนไม่ให้แสดงหากผู้ใช้งานอยู่ในกลุ่ม "ปล่อยถอน" (allowwd)
   const levelBadgeHtml = (u.userLevel === 'allowwd')
     ? ''
     : `<span class="inline-block mt-3 px-4 py-1.5 bg-amber-50 text-amber-600 text-xs font-bold rounded-full border border-amber-200 shadow-sm">⭐ ${levelText}</span>`;
@@ -1179,7 +1170,7 @@ window.showEditBank = function() {
       <option value="ธนาคารไทยพาณิชย์" ${u.bankName==='ธนาคารไทยพาณิชย์'?'selected':''}>ธนาคารไทยพาณิชย์ (SCB)</option>
       <option value="ธนาคารกรุงเทพ" ${u.bankName==='ธนาคารกรุงเทพ'?'selected':''}>ธนาคารกรุงเทพ (BBL)</option>
       <option value="ธนาคารกรุงไทย" ${u.bankName==='ธนาคารกรุงไทย'?'selected':''}>ธนาคารกรุงไทย (KTB)</option>
-      <option value="ธนาคารกรุงศรีอยุธยา" ${u.bankName==='ธนาคารกรุงศรีอยุธยา'?'selected':''}>ธนาคารกรุงศรีอยุธยา (Krungsri)</option>
+      <option value="ธนาคารกรุงศรีอยุธยา" ${u.bankName==='ธนาคารกรุงศรีอยุยา'?'selected':''}>ธนาคารกรุงศรีอยุธยา (Krungsri)</option>
       <option value="ธนาคารออมสิน" ${u.bankName==='ธนาคารออมสิน'?'selected':''}>ธนาคารออมสิน (GSB)</option>
       <option value="ทรูวอลเลท" ${u.bankName==='ทรูวอลเลท'?'selected':''}>ทรูวอลเลท (TrueMoney)</option>
     </select>
@@ -1287,7 +1278,7 @@ function renderAdminTab() {
 function renderAdminSettings(c) {
   const cfg = getConfig() || {}; const logoUrl = getLogoUrl(); const adminPin = getAdminPin(); const inviteCode = getInviteCode(); const marqueeText = getMarqueeText(); const lineQrUrl = getLineQrUrl(); const lineId = getLineId(); const topupQrUrl = getTopupQrUrl(); const topupAccount = getTopupAccount(); const tP = cfg.themePrimary || '#2563eb'; const tS = cfg.themeSecondary || '#4f46e5';
   
-  // 📌 ลบแถบการแก้ไข "ข้อความตอนเชื่อมต่อระบบ" ออกตามความต้องการอย่างเป็นระเบียบเรียบร้อย
+  // 📌 ถอดกล่องการแก้ไข "ข้อความตอนเชื่อมต่อระบบ" ออกอย่างเป็นระเบียบเรียบร้อย
   c.innerHTML = `
     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow mb-6">
       <h3 class="font-bold text-sm mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="globe" class="w-4 h-4"></i> ตั้งค่าชื่อและโลโก้บนแท็บเบราว์เซอร์</h3>
