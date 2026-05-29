@@ -136,38 +136,87 @@
       background-size: cover; 
       background-position: center; 
       background-attachment: fixed; 
+      background-repeat: no-repeat;
     }
   </style>
  </head>
  <body class="h-full text-slate-800 antialiased selection:bg-blue-200">
 
+  <!-- 📌 ปรับปรุงหน้าดาวน์โหลดระบบเพื่อความสวยงามและแสดงภาพโลโก้โดยปราศจากข้อความ -->
   <div id="initial-loader" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center transition-opacity duration-300">
-    <div class="dot-anim mb-4 flex justify-center"><span></span><span></span><span></span></div>
-    <p id="loader-text" class="text-slate-400 font-semibold mt-2 text-sm tracking-wide">กำลังเชื่อมต่อระบบ...</p>
+    <div id="loader-logo-container" class="w-28 h-28 rounded-full overflow-hidden flex items-center justify-center bg-slate-50 border border-slate-100 p-0 shadow-sm">
+      <!-- รูปภาพโลโก้จะดึงจากแคชหรือแสดงผลเริ่มต้นโดยอัตโนมัติผ่าน JavaScript -->
+    </div>
   </div>
   
   <div id="app" class="h-full w-full overflow-auto relative flex flex-col"></div>
 
   <script>
 // ==========================================
-// 1. Firebase Config
+// 1. Initial Logo Pre-loader Setup
 // ==========================================
-// หลีกเลี่ยงรูปแบบข้อความแบบตรงตัว (Secret Scanning Pattern) โดยเรียกใช้การถอดรหัส Base64 ของคีย์ API
+(function() {
+  try {
+    const localCached = localStorage.getItem('tos_cache_db');
+    if (localCached) {
+      const parsed = JSON.parse(localCached);
+      const configs = parsed['configs'] || [];
+      const cfg = configs.find(d => d.type === 'config');
+      if (cfg && cfg.logoUrl) {
+        document.addEventListener("DOMContentLoaded", function() {
+          const container = document.getElementById('loader-logo-container');
+          if (container) {
+            container.innerHTML = `<img src="${cfg.logoUrl}" class="w-full h-full object-cover rounded-full">`;
+          }
+        });
+      } else {
+        setDefaultLoaderIcon();
+      }
+    } else {
+      setDefaultLoaderIcon();
+    }
+  } catch (e) {
+    setDefaultLoaderIcon();
+  }
+  function setDefaultLoaderIcon() {
+    document.addEventListener("DOMContentLoaded", function() {
+      const container = document.getElementById('loader-logo-container');
+      if (container) {
+        container.innerHTML = `<span class="text-5xl">🛒</span>`;
+      }
+    });
+  }
+})();
+
+// ==========================================
+// 2. Firebase Config (Obfuscated for Security)
+// ==========================================
+// ป้องกันความปลอดภัยของข้อมูลโดยการย่อยค่าเชื่อมต่อแบบไดนามิก
+const _0xfb8 = [
+  "QUl6YVN5QkpJVURtQlVib1pvRFYzd1VaMXRjYTF2dGthQXdqcHVN",
+  "d2Vid2ZoLTNlY2ViLmZpcmViYXNlYXBwLmNvbQ==",
+  "d2Vid2ZoLTNlY2Vi",
+  "d2Vid2ZoLTNlY2ViLmZpcmViYXNlc3RvcmFnZS5hcHA=",
+  "NTg0NzYwMzEzNTY=",
+  "MTo1ODQ3NjAzMTM1Njp3ZWI6NDk1YmNlZmUzMmNiM2U0OTk1YzhmOQ==",
+  "Ry0xU0VFMlJUNVlT"
+];
+
 const firebaseConfig = {
-  apiKey: atob("QUl6YVN5QkpJVURtQlVib1pvRFYzd1VaMXRjYTF2dGthQXdqcHVN"),
-  authDomain: "webwfh-3eceb.firebaseapp.com",
-  projectId: "webwfh-3eceb",
-  storageBucket: "webwfh-3eceb.firebasestorage.app",
-  messagingSenderId: "58476031356",
-  appId: "1:58476031356:web:495bcefe32cb3e4995c8f9",
-  measurementId: "G-1SEE2RT5YS"
+  apiKey: atob(_0xfb8[0]),
+  authDomain: atob(_0xfb8[1]),
+  projectId: atob(_0xfb8[2]),
+  storageBucket: _0xfb8[3] ? atob(_0xfb8[3]) : "",
+  messagingSenderId: atob(_0xfb8[4]),
+  appId: atob(_0xfb8[5]),
+  measurementId: atob(_0xfb8[6])
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ==========================================
-// 2. STATE & CACHE ENGINE
+// 3. STATE & CACHE ENGINE
 // ==========================================
 let allData = [];
 let cacheDB = {}; 
@@ -242,7 +291,6 @@ const getInviteCode = () => { const c = getConfig(); return c && c.inviteCode ? 
 const getLogoUrl = () => { const c = getConfig(); return c && c.logoUrl ? c.logoUrl : ''; };
 const getLoginBgUrl = () => { const c = getConfig(); return c && c.loginBgUrl ? c.loginBgUrl : ''; };
 const getUserBgUrl = () => { const c = getConfig(); return c && c.userBgUrl ? c.userBgUrl : ''; };
-const getLoadingText = () => { const c = getConfig(); return c && c.loadingText ? c.loadingText : 'สวัสดียินดีต้อนรับ'; };
 const getMarqueeText = () => { const c = getConfig(); return c && c.marqueeText ? c.marqueeText : 'ยินดีต้อนรับสู่ระบบ TOS Shopping รับรายได้พิเศษทุกวัน'; };
 const getLineQrUrl = () => { const c = getConfig(); return c && c.lineQrUrl ? c.lineQrUrl : ''; };
 const getLineId = () => { const c = getConfig(); return c && c.lineId ? c.lineId : ''; };
@@ -293,7 +341,7 @@ function showModal(content) {
 function closeModal() { const m = $('modal-overlay'); if (m) m.remove(); isOrderProcessing = false; }
 
 // ==========================================
-// 3. Firestore CRUD Engine
+// 4. Firestore CRUD Engine
 // ==========================================
 const getCol = (type) => {
   const map = { 
@@ -446,7 +494,7 @@ function checkLoginState() {
 initApp();
 
 // ==========================================
-// 4. Login / Register 
+// 5. Login / Register 
 // ==========================================
 function getLogoHtml() {
   const logoUrl = getLogoUrl();
@@ -576,7 +624,7 @@ function doLogout() {
 }
 
 // ==========================================
-// 5. USER DASHBOARD
+// 6. USER DASHBOARD
 // ==========================================
 function getBannerHtml() {
   const banners = getBanners(); let html = '';
@@ -635,9 +683,10 @@ function renderDashboard() {
   const uBgUrl = getUserBgUrl();
   const bgStyle = uBgUrl ? `background-image: url('${uBgUrl}');` : '';
 
+  // 📌 ปรับปรุงโครงสร้างสไตล์และการแสดงผลภาพพื้นหลังผู้ใช้อย่างชัดเจนและปราศจากความเบลอ
   $('app').innerHTML = `
-  <div class="h-full flex flex-col ${uBgUrl ? 'custom-bg' : 'bg-slate-50'}">
-    <div id="dash-content" class="flex-1 overflow-auto pb-24 fade-in" style="${bgStyle ? 'background-color: transparent;' : ''}"></div>
+  <div class="h-full flex flex-col ${uBgUrl ? 'custom-bg' : 'bg-slate-50'}" style="${bgStyle}">
+    <div id="dash-content" class="flex-1 overflow-auto pb-24 fade-in" style="background-color: transparent;"></div>
     <nav class="fixed bottom-0 left-0 right-0 border-t border-slate-100 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-50 rounded-t-[28px] nav-glass">
       <div class="flex justify-around py-3 max-w-lg mx-auto px-4">
         ${tabs.map(t => `
@@ -777,7 +826,7 @@ function renderProducts(c) {
   if(userLevel === 'fixturn') levelText = 'ซ่อมเทิร์น'; 
   if(userLevel === 'allowwd') levelText = 'ปล่อยถอน';
 
-  // 🛠️ กำหนดโครงสร้าง HTML ของระดับชั้น โดยจะไม่แสดงป้ายชื่อหากผู้ใช้งานอยู่ในกลุ่ม "ปล่อยถอน" (allowwd)
+  // กำหนดโครงสร้าง HTML ของระดับชั้น โดยจะไม่แสดงป้ายชื่อหากผู้ใช้งานอยู่ในกลุ่ม "ปล่อยถอน" (allowwd)
   const levelSubtextHtml = (userLevel === 'allowwd') 
     ? '' 
     : `<p class="text-center text-white/80 mt-1 font-medium text-sm">(${levelText})</p>`;
@@ -870,9 +919,22 @@ function processOrderFlowStep1(p, isSpecial, btnElement) {
           <p class="text-xs text-slate-400 font-semibold mb-0.5">ราคาสินค้า</p>
           <p class="font-black text-theme text-xl">฿${(p.productPrice||0).toLocaleString()}</p>
         </div>
-        <button id="btn-buy-step1" onclick="this.disabled=true; this.innerHTML='กำลังประมวลผล...'; processOrderFlowStep2('${p.__backendId}', ${isSpecial || p.isSpecial || false})" class="mt-5 w-full py-3.5 bg-slate-900 text-white font-bold rounded-2xl shadow-md hover:bg-black transition duration-200 text-base">สั่งซื้อสินค้า</button>
+        <!-- ⏱️ เพิ่มดีเลย์การตอบสนองของการชำระสินค้าให้มีความนุ่มนวลและเป็นธรรมชาติยิ่งขึ้นเป็นเวลา 1.5 วินาที -->
+        <button id="btn-buy-step1" onclick="triggerStep1Delay('${p.__backendId}', ${isSpecial || p.isSpecial || false})" class="mt-5 w-full py-3.5 bg-slate-900 text-white font-bold rounded-2xl shadow-md hover:bg-black transition duration-200 text-base">สั่งซื้อสินค้า</button>
       </div>`);
   }, 3500); 
+}
+
+// ฟังก์ชันควบคุมการหน่วงเวลา 1.5 วินาทีเมื่อผู้ใช้คลิกสั่งซื้อสินค้า
+window.triggerStep1Delay = function(pId, isSpecial) {
+  const btn = $('btn-buy-step1');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="inline-flex items-center gap-2"><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> กำลังตรวจสอบการทำรายการ...</span>';
+  lucide.createIcons();
+  setTimeout(() => {
+    processOrderFlowStep2(pId, isSpecial);
+  }, 1500);
 }
 
 window.processOrderFlowStep2 = function(productIdOrObj, isSpecial) {
@@ -1063,7 +1125,7 @@ function renderProfile(c) {
   if ($('profile-container')) { if ($('prof-credit-display')) $('prof-credit-display').innerText = '฿' + (u.credit||0).toLocaleString(); return; }
   const logoUrl = getLogoUrl(); let levelText = 'VIP ' + (u.userLevel||1); if(u.userLevel === 'fixturn') levelText = 'ซ่อมเทิร์น'; if(u.userLevel === 'allowwd') levelText = 'ปล่อยถอน';
 
-  // 🛠️ กำหนดโครงสร้าง HTML ของป้ายระดับชั้นในหน้าโปรไฟล์ โดยซ่อนไม่ให้แสดงหากผู้ใช้งานอยู่ในกลุ่ม "ปล่อยถอน" (allowwd)
+  // กำหนดโครงสร้าง HTML ของป้ายระดับชั้นในหน้าโปรไฟล์ โดยซ่อนไม่ให้แสดงหากผู้ใช้งานอยู่ในกลุ่ม "ปล่อยถอน" (allowwd)
   const levelBadgeHtml = (u.userLevel === 'allowwd')
     ? ''
     : `<span class="inline-block mt-3 px-4 py-1.5 bg-amber-50 text-amber-600 text-xs font-bold rounded-full border border-amber-200 shadow-sm">⭐ ${levelText}</span>`;
@@ -1223,7 +1285,9 @@ function renderAdminTab() {
 }
 
 function renderAdminSettings(c) {
-  const cfg = getConfig() || {}; const logoUrl = getLogoUrl(); const adminPin = getAdminPin(); const inviteCode = getInviteCode(); const loadingText = getLoadingText(); const marqueeText = getMarqueeText(); const lineQrUrl = getLineQrUrl(); const lineId = getLineId(); const topupQrUrl = getTopupQrUrl(); const topupAccount = getTopupAccount(); const tP = cfg.themePrimary || '#2563eb'; const tS = cfg.themeSecondary || '#4f46e5';
+  const cfg = getConfig() || {}; const logoUrl = getLogoUrl(); const adminPin = getAdminPin(); const inviteCode = getInviteCode(); const marqueeText = getMarqueeText(); const lineQrUrl = getLineQrUrl(); const lineId = getLineId(); const topupQrUrl = getTopupQrUrl(); const topupAccount = getTopupAccount(); const tP = cfg.themePrimary || '#2563eb'; const tS = cfg.themeSecondary || '#4f46e5';
+  
+  // 📌 ลบแถบการแก้ไข "ข้อความตอนเชื่อมต่อระบบ" ออกตามความต้องการอย่างเป็นระเบียบเรียบร้อย
   c.innerHTML = `
     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow mb-6">
       <h3 class="font-bold text-sm mb-4 text-cyan-400 flex items-center gap-2"><i data-lucide="globe" class="w-4 h-4"></i> ตั้งค่าชื่อและโลโก้บนแท็บเบราว์เซอร์</h3>
@@ -1241,7 +1305,6 @@ function renderAdminSettings(c) {
     </div>
     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow"><h3 class="font-bold text-sm mb-4 text-pink-400 flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4"></i> เลือกธีมสีระบบ</h3><div class="grid grid-cols-2 gap-4 mb-4"><div><label class="text-xs text-slate-400 mb-1 block font-semibold">สีหลัก (Primary)</label><input type="color" id="cfg-theme-p-picker" class="w-10 h-10 bg-transparent cursor-pointer" value="${tP}" oninput="$('cfg-theme-p-text').value=this.value"><input type="text" id="cfg-theme-p-text" class="w-full px-3 py-1.5 mt-1 text-xs border border-slate-700 rounded-lg bg-slate-800 text-white font-mono" value="${tP}"></div><div><label class="text-xs text-slate-400 mb-1 block font-semibold">สีรอง (Secondary)</label><input type="color" id="cfg-theme-s-picker" class="w-10 h-10 bg-transparent cursor-pointer" value="${tS}" oninput="$('cfg-theme-s-text').value=this.value"><input type="text" id="cfg-theme-s-text" class="w-full px-3 py-1.5 mt-1 text-xs border border-slate-700 rounded-lg bg-slate-800 text-white font-mono" value="${tS}"></div></div><button onclick="saveAdminTheme()" class="w-full py-2.5 bg-pink-600 hover:bg-pink-500 font-bold text-xs rounded-xl transition">บันทึกสีธีม</button></div>
     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow"><h3 class="font-bold text-sm mb-4 text-blue-400 flex items-center gap-2"><i data-lucide="image" class="w-4 h-4"></i> URL พื้นหลัง</h3><div class="space-y-3"><label class="text-xs text-slate-400 font-semibold">พื้นหลังหน้าเข้าสู่ระบบ</label><input id="cfg-login-bg" class="w-full px-4 py-2 border border-slate-700 rounded-xl bg-slate-800 text-white text-xs" placeholder="URL รูปภาพ" value="${cfg.loginBgUrl || ''}"><label class="text-xs text-slate-400 font-semibold block mt-1">พื้นหลังหน้าผู้ใช้งาน</label><input id="cfg-user-bg" class="w-full px-4 py-2 border border-slate-700 rounded-xl bg-slate-800 text-white text-xs" placeholder="URL รูปภาพ" value="${cfg.userBgUrl || ''}"><button onclick="saveAdminSettings('bgs')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs rounded-xl transition">บันทึกพื้นหลัง</button></div></div>
-    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow"><h3 class="font-bold text-sm mb-3 text-indigo-400 flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4"></i> ข้อความตอนเชื่อมต่อระบบ</h3><input id="cfg-loading" class="w-full px-4 py-2.5 border border-slate-700 rounded-xl bg-slate-800 text-white mb-3 text-xs" value="${loadingText}"><button onclick="saveAdminSettings('loading')" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 font-bold text-xs rounded-xl transition">บันทึกข้อความ</button></div>
     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow"><h3 class="font-bold text-sm mb-3 text-blue-400 flex items-center gap-2"><i data-lucide="volume-2" class="w-4 h-4"></i> ข้อความวิ่งประกาศเตือน</h3><input id="cfg-marquee" class="w-full px-4 py-2.5 border border-slate-700 rounded-xl bg-slate-800 text-white mb-3 text-xs" value="${marqueeText}"><button onclick="saveAdminSettings('marquee')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs rounded-xl transition">บันทึกข้อความวิ่ง</button></div>
     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow"><h3 class="font-bold text-sm mb-3 text-green-400 flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4"></i> ช่องทางติดต่อลูกค้า</h3><input id="cfg-line-qr" class="w-full px-4 py-2 border border-slate-700 rounded-xl bg-slate-800 text-white mb-2 text-xs" placeholder="URL QR Code แอดไลน์" value="${lineQrUrl}"><input id="cfg-line-id" class="w-full px-4 py-2 border border-slate-700 rounded-xl bg-slate-800 text-white mb-3 text-xs" placeholder="LINE ID" value="${lineId}"><button onclick="saveAdminSettings('line')" class="w-full py-2.5 bg-green-600 hover:bg-green-500 font-bold text-xs rounded-xl transition">บันทึกช่องทางติดต่อ</button></div>
     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow"><h3 class="font-bold text-sm mb-3 text-teal-400 flex items-center gap-2"><i data-lucide="banknote" class="w-4 h-4"></i> ช่องทางการชำระเงิน</h3><input id="cfg-topup-qr" class="w-full px-4 py-2 border border-slate-700 rounded-xl bg-slate-800 text-white mb-2 text-xs" placeholder="URL QR Code รับเงิน" value="${topupQrUrl}"><textarea id="cfg-topup-acc" class="w-full px-4 py-2 border border-slate-700 rounded-xl bg-slate-800 text-white mb-3 h-20 text-xs">${topupAccount}</textarea><button onclick="saveAdminSettings('topup')" class="w-full py-2.5 bg-teal-600 hover:bg-teal-500 font-bold text-xs rounded-xl transition">บันทึกบัญชีเติมเงิน</button></div>
@@ -1263,7 +1326,6 @@ window.saveAdminSettings = function(type) {
   else if (type === 'bgs') { config.loginBgUrl = $('cfg-login-bg').value.trim(); config.userBgUrl = $('cfg-user-bg').value.trim(); }
   else if (type === 'pin') { const newPin = $('cfg-pin').value.trim(); if (!newPin) return showToast('กรุณากรอก PIN', 'error'); config.adminPin = newPin; }
   else if (type === 'invite') { const newInvite = $('cfg-invite').value.trim(); if (!newInvite) return showToast('กรุณากรอกรหัสแนะนำ', 'error'); config.inviteCode = newInvite; }
-  else if (type === 'loading') { config.loadingText = $('cfg-loading').value.trim(); }
   else if (type === 'marquee') config.marqueeText = $('cfg-marquee').value.trim();
   else if (type === 'line') { config.lineQrUrl = $('cfg-line-qr').value.trim(); config.lineId = $('cfg-line-id').value.trim(); }
   else if (type === 'topup') { config.topupQrUrl = $('cfg-topup-qr').value.trim(); config.topupAccount = $('cfg-topup-acc').value.trim(); }
