@@ -915,7 +915,7 @@
               <p class="text-xs text-slate-400 font-semibold mb-0.5">ราคาสินค้า</p>
               <p class="font-black text-theme text-xl">฿${(p.productPrice||0).toLocaleString()}</p>
             </div>
-            <!-- ⏱️ ปุ่มยืนยันพร้อมระบบดีเลย์หน่วงเวลาเสมือนจริง 1.5 วินาที -->
+            <!-- ⏱️ ปุ่มสั่งซื้อสินค้าพร้อมระบบดีเลย์หน่วงเวลาสากล 1.5 วินาที -->
             <button id="btn-buy-step1" onclick="triggerStep1Delay('${p.__backendId}', ${isSpecial || p.isSpecial || false})" class="mt-5 w-full py-3.5 bg-slate-900 text-white font-bold rounded-2xl shadow-md hover:bg-black transition duration-200 text-base">สั่งซื้อสินค้า</button>
           </div>`);
       }, 3500); 
@@ -1685,11 +1685,73 @@
 
     function deleteAssignedSpecial(bid) { if(confirm('ต้องการยกเลิกคำสั่งล็อกออเดอร์พิเศษนี้หรือไม่?')) { windowDataSdk.delete(allData.find(d => d.__backendId === bid)); renderAdminTab(); } }
 
-    // 💵 Withdrawals
+    // 💵 Withdrawals (อนุมัติ / ปฏิเสธ การถอนเงิน)
+    function renderAdminWithdrawals(c) {
+      const wds = getWithdrawals().filter(w => w.status === 'pending');
+      if (wds.length === 0) {
+        c.innerHTML = '<div class="bg-slate-900 p-6 rounded-2xl text-center border border-slate-800"><p class="text-slate-400 font-medium text-sm">ไม่มีรายการรอดำเนินการ</p></div>';
+      } else {
+        c.innerHTML = wds.map(w => `
+          <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow mb-3 text-left">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <p class="font-bold text-white text-base">${w.username}</p>
+                <p class="text-xs text-slate-400 mt-1 font-semibold">${w.bankName}</p>
+                <p class="text-xs text-blue-400 font-bold font-mono tracking-wide">${w.bankNumber}</p>
+              </div>
+              <p class="text-xl font-black text-yellow-400">฿${w.amount.toLocaleString()}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="approveWithdraw('${w.__backendId}')" class="flex-1 py-2.5 bg-emerald-500/15 border border-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold text-xs rounded-xl transition">โอนเงินสำเร็จ</button>
+              <button onclick="rejectWithdraw('${w.__backendId}')" class="flex-1 py-2.5 bg-rose-500/15 border border-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white font-bold text-xs rounded-xl transition">ปฏิเสธ (คืนเงิน)</button>
+            </div>
+          </div>`).join('');
+      }
+    }
+
     function approveWithdraw(bid) { const w = allData.find(d => d.__backendId === bid); w.status = 'approved'; windowDataSdk.update(w); renderAdminTab(); }
     function rejectWithdraw(bid) { const w = allData.find(d => d.__backendId === bid); const u = getUsers().find(user => user.id === w.userId); if (u) { u.credit = (u.credit||0) + (w.amount||0); windowDataSdk.update(u); } w.status = 'rejected'; windowDataSdk.update(w); renderAdminTab(); }
 
-    // 🖼️ Media
+    // 🖼️ Media (จัดการแบนเนอร์และรูปภาพแกลเลอรี)
+    function renderAdminMedia(c) {
+      c.innerHTML = `
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow mb-6 text-left">
+          <h3 class="font-bold text-sm mb-3 text-blue-400 flex items-center gap-1.5"><i data-lucide="image" class="w-4.5 h-4.5"></i> แบนเนอร์สไลด์หน้าจอหลัก</h3>
+          <button onclick="showAddBanner()" class="w-full py-2 bg-blue-600/20 text-blue-300 border border-blue-500/10 rounded-xl text-xs font-semibold hover:bg-blue-600/30 transition mb-4">+ เพิ่มแบนเนอร์ภาพสไลด์</button>
+          <div class="space-y-3.5">
+            ${getBanners().map(b => `
+              <div class="flex items-center gap-3 bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                <div class="flex flex-col gap-1 flex-shrink-0">
+                  <img src="${b.bannerUrl}" class="w-20 h-12 object-cover rounded-xl border border-slate-800" title="รูปภาพบนมือถือ">
+                  ${b.bannerPcUrl ? `<img src="${b.bannerPcUrl}" class="w-20 h-10 object-cover rounded-xl border border-slate-800" title="รูปภาพบนคอมพิวเตอร์">` : `<div class="w-20 h-10 bg-slate-900 flex items-center justify-center rounded-xl text-[9px] text-slate-500 border border-slate-800 font-semibold">ไม่มีรูป PC</div>`}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs text-slate-300 truncate font-semibold">Mobile: ${b.bannerUrl}</p>
+                  <p class="text-[11px] text-slate-500 truncate font-mono mt-0.5">PC: ${b.bannerPcUrl || 'ไม่ได้กำหนด'}</p>
+                </div>
+                <div class="flex gap-1">
+                  <button onclick="editBanner('${b.__backendId}')" class="p-2 text-blue-400 hover:bg-slate-800 rounded-lg"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                  <button onclick="deleteBanner('${b.__backendId}')" class="p-2 text-rose-400 hover:bg-slate-800 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow text-left">
+          <h3 class="font-bold text-sm mb-3 text-purple-400 flex items-center gap-1.5"><i data-lucide="grid" class="w-4.5 h-4.5"></i> แกลเลอรีรูปภาพ</h3>
+          <button onclick="showAddGallery()" class="w-full py-2 bg-purple-600/20 text-purple-300 border border-purple-500/10 rounded-xl text-xs font-semibold hover:bg-purple-600/30 transition mb-4">+ เพิ่มรูปภาพในแกลเลอรี</button>
+          <div class="grid grid-cols-2 gap-3">
+            ${getGallery().map(g => `
+              <div class="relative h-24 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 group shadow-md">
+                <img src="${g.galleryUrl}" class="w-full h-full object-cover">
+                <div class="absolute top-1.5 right-1.5 flex gap-1 bg-slate-950/75 p-1 rounded-lg backdrop-blur">
+                  <button onclick="editGallery('${g.__backendId}')" class="p-1 text-blue-400 hover:text-white"><i data-lucide="edit" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="deleteGallery('${g.__backendId}')" class="p-1 text-rose-400 hover:text-white"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
     function showAddBanner() { 
       showModal(`
         <h3 class="font-bold text-base mb-4 text-slate-800">เพิ่มแบนเนอร์ภาพสไลด์</h3>
