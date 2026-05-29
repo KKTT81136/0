@@ -504,16 +504,17 @@
       const bgUrl = getLoginBgUrl();
       const bgStyle = bgUrl ? `background-image: url('${bgUrl}'); background-size: cover; background-position: center;` : '';
 
+      // 📌 นำฟิลเตอร์เบลอและหน้ากากมืดสีเทาออกจากพื้นหลัง เพื่อความคมชัด 100% ตามต้นฉบับรูปภาพ
       app.innerHTML = `
       <div class="min-h-full w-full flex flex-col items-center justify-center p-4 relative ${bgUrl ? '' : 'bg-theme-gradient'}" style="${bgStyle}">
-        ${bgUrl ? '<div class="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]"></div>' : ''}
         <div class="w-full max-w-sm relative z-10 py-4">
           <div class="text-center mb-6">
             <div id="logo-click" class="inline-flex items-center justify-center w-32 h-32 rounded-full shadow-2xl cursor-pointer overflow-hidden transition-all duration-300 bg-transparent p-0">
               ${getLogoHtml()}
             </div>
           </div>
-          <div id="form-card" class="bg-white/10 backdrop-blur-lg rounded-[32px] p-6 shadow-2xl border border-white/20 transition-all duration-300">
+          <!-- ปรับระดับความทึบของตัวการ์ดเพื่อความสะดวกและสมดุลในการอ่านข้อความอย่างปลอดภัย -->
+          <div id="form-card" class="bg-slate-950/85 rounded-[32px] p-6 shadow-2xl border border-white/10 transition-all duration-300">
             <div id="form-content"></div>
           </div>
           <p class="text-center mt-6 text-white/95 text-sm font-medium" id="toggle-link"></p>
